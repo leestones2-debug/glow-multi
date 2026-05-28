@@ -10,7 +10,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ── HMAC 자체서명 토큰 시스템 ──
-const TOKEN_SECRET = process.env.TOKEN_SECRET || 'glow-multi-secret-key-2024';
+const TOKEN_SECRET = process.env.TOKEN_SECRET || 'glow-studio-secret-key-2024';
 
 function createToken(payload) {
   const data = {
@@ -193,7 +193,7 @@ async function initDB() {
   const siteExists = await query(`SELECT id FROM sites WHERE id='default'`);
   if (siteExists.rows.length === 0) {
     await query(`INSERT INTO sites(id,domain,name,logo,primary_color,accent_color,kakao,bank,margin,exrate,credit)
-      VALUES('default','localhost','GLOW','✨','#7209B7','#F72585',
+      VALUES('default','localhost','Glow Studio','✨','#7209B7','#F72585',
       'https://open.kakao.com/o/sphCuRed',
       '우리은행 1002-160-164625 (예금주: 조인호)',
       50,1380,999999999)`);
@@ -1050,7 +1050,7 @@ async function sendEmail(to, subject, html) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) { console.log('⚠️ RESEND_API_KEY 미설정 - 이메일 발송 스킵'); return false; }
   try {
-    const from = process.env.EMAIL_FROM || 'noreply@glow-multi.onrender.com';
+    const from = process.env.EMAIL_FROM || 'noreply@glow-studio.onrender.com';
     const resp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
@@ -1086,8 +1086,8 @@ app.post('/api/forgot-password', async (req, res) => {
     // 사이트 정보 가져오기
     const siteR = await query(`SELECT * FROM sites WHERE id=$1`, [siteId]);
     const site = siteR.rows[0];
-    const siteName = site?.name || 'GLOW';
-    const siteDomain = site?.domain || 'glow-multi.onrender.com';
+    const siteName = site?.name || 'Glow Studio';
+    const siteDomain = site?.domain || 'glow-studio.onrender.com';
     const resetUrl = `https://${siteDomain}/reset-password?token=${token}`;
     
     // HTML 이메일 템플릿
@@ -1354,7 +1354,7 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     await query(`INSERT INTO orders(id,site_id,uid,uname,sid,sname,pl,api_order_id,link,qty,charge,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
       [orderId, req.siteId, user.id, user.name, svc.id, svc.name, svc.pl, apiOrderId, link, qtyNum, charge, apiOrderId ? 'processing' : 'pending']);
     const updR = await query(`SELECT * FROM users WHERE id=$1`, [user.id]);
-    tgAlert(`📦 <b>새 주문</b> [${site?.name || 'GLOW'}]\n👤 ${user.name}\n✦ ${svc.name}\n🔢 ${qtyNum.toLocaleString()}개\n💰 ₩${Math.round(charge).toLocaleString()}\n🔗 ${link}`, site);
+    tgAlert(`📦 <b>새 주문</b> [${site?.name || 'Glow Studio'}]\n👤 ${user.name}\n✦ ${svc.name}\n🔢 ${qtyNum.toLocaleString()}개\n💰 ₩${Math.round(charge).toLocaleString()}\n🔗 ${link}`, site);
     
     // 💵 Peakerr 잔액 체크 (비동기, 주문 처리와 별도로)
     checkPeakerrBalance().catch(e => console.log('잔액 체크 실패:', e.message));
@@ -1449,7 +1449,7 @@ app.post('/api/charges', requireAuth, async (req, res) => {
     const id = 'C' + Date.now();
     await query(`INSERT INTO charges(id,site_id,uid,uname,amount,note,status) VALUES($1,$2,$3,$4,$5,$6,$7)`,
       [id, req.siteId, user.id, user.name, amt, note || '', 'pending']);
-    tgChargeAlert(id, user.name, amt, note, req.site || {name:'GLOW'});
+    tgChargeAlert(id, user.name, amt, note, req.site || {name:'Glow Studio'});
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -2068,7 +2068,7 @@ app.post('/api/admin/tg-test', requireAdmin, async (req, res) => {
     if (!token || !chat) return res.json({ error: '텔레그램 설정을 먼저 저장하세요' });
     const resp = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chat, text: `✅ ${req.site?.name || 'GLOW'} 알림 테스트 성공! ✨` })
+      body: JSON.stringify({ chat_id: chat, text: `✅ ${req.site?.name || 'Glow Studio'} 알림 테스트 성공! ✨` })
     });
     const data = await resp.json();
     if (data.ok) res.json({ ok: true });
@@ -2485,14 +2485,14 @@ app.get('*', async (req, res) => {
     const site = req.site;
     
     // 기본값 (default 사이트 또는 site 없을 경우)
-    let siteName = 'GLOW';
+    let siteName = 'Glow Studio';
     let siteLogo = '✨';
     let primaryColor = '#F72585';
     let accentColor = '#B5179E';
     let p3Color = '#7209B7';
     
     if (site) {
-      siteName = (site.name || 'GLOW').replace(/[<>"']/g, '');
+      siteName = (site.name || 'Glow Studio').replace(/[<>"']/g, '');
       siteLogo = (site.logo || '✨').replace(/[<>"']/g, '');
       if (site.primary_color) primaryColor = site.primary_color;
       if (site.accent_color) accentColor = site.accent_color;
@@ -2524,7 +2524,7 @@ app.get('*', async (req, res) => {
 
 // 서버 시작
 app.listen(PORT, async () => {
-  console.log(`✨ GLOW Multi-Tenant 서버 실행 중: http://localhost:${PORT}`);
+  console.log(`✨ Glow Studio Multi-Tenant 서버 실행 중: http://localhost:${PORT}`);
   await initDB();
 
   // 텔레그램 웹훅 자동 등록
