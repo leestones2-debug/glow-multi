@@ -549,7 +549,7 @@ tr:last-child td{border-bottom:none}
             </div>
             <div class="card">
               <div style="font-size:15px;font-weight:800;margin-bottom:12px">🎨 기본 설정</div>
-              <div class="fg"><label>사이트 이름</label><input type="text" id="st사이트Name" placeholder="GLOW"/></div>
+              <div class="fg"><label>사이트 이름</label><input type="text" id="st사이트Name" placeholder="Glow Studio"/></div>
               <div class="fg"><label>카카오톡 링크</label><input type="text" id="stKakao" placeholder="https://open.kakao.com/..."/></div>
               <div class="fg"><label>입금 계좌 안내</label><textarea id="stBank" rows="2" placeholder="우리은행 1002-160-164625"></textarea></div>
               <div id="priceSection">
@@ -983,11 +983,11 @@ var CUR=null,SVCS=[],SEL=null,FLT='all',SITE_CONFIG=null;
 
 async function api(url,method,body){
   var opts={method:method||'GET',headers:{'Content-Type':'application/json'}};
-  var token=localStorage.getItem('glow_token');
+  var token=localStorage.getItem('glow_studio_token');
   if(token)opts.headers['Authorization']='Bearer '+token;
   if(body)opts.body=JSON.stringify(body);
   var res=await fetch(url,opts);
-  if(res.status===401){localStorage.removeItem('glow_token');CUR=null;showPg('pg-land');return {error:'로그인 필요'};}
+  if(res.status===401){localStorage.removeItem('glow_studio_token');CUR=null;showPg('pg-land');return {error:'로그인 필요'};}
   return res.json();
 }
 function gf(v){return'₩'+Math.round(v||0).toLocaleString()}
@@ -1068,7 +1068,7 @@ async function loadSiteConfig(){
   }
 
   // 브랜드 이름/로고 업데이트
-  var logo=d.logo||'✨',name=d.name||'GLOW';
+  var logo=d.logo||'✨',name=d.name||'Glow Studio';
   document.title=name+' — 채널 성장 플랫폼';
   ['navLogo','authLogo','sbLogo','tbLogo'].forEach(function(id){var el=ge(id);if(el)el.textContent=logo});
   ['navName','authName','sbName2','tbName'].forEach(function(id){var el=ge(id);if(el)el.textContent=name});
@@ -1191,7 +1191,7 @@ async function doLogin(){
   if(!e||!p){toast('이메일과 비밀번호를 입력하세요','err');return}
   var d=await api('/api/login','POST',{email:e,pw:p});
   if(d.error){toast(d.error,'err');return}
-  if(d.token)localStorage.setItem('glow_token',d.token);
+  if(d.token)localStorage.setItem('glow_studio_token',d.token);
   CUR=d.user;enterDash();
 }
 async function doRegister(){
@@ -1199,11 +1199,11 @@ async function doRegister(){
   if(!n||!e||!p){toast('모든 항목을 입력하세요','err');return}
   var d=await api('/api/register','POST',{name:n,email:e,pw:p});
   if(d.error){toast(d.error,'err');return}
-  if(d.token)localStorage.setItem('glow_token',d.token);
-  if(d.token)localStorage.setItem('glow_token',d.token);
+  if(d.token)localStorage.setItem('glow_studio_token',d.token);
+  if(d.token)localStorage.setItem('glow_studio_token',d.token);
   CUR=d.user;enterDash();toast('가입 완료! 환영합니다 ✨','ok');
 }
-async function doLogout(){await api('/api/logout','POST');localStorage.removeItem('glow_token');CUR=null;showPg('pg-land')}
+async function doLogout(){await api('/api/logout','POST');localStorage.removeItem('glow_studio_token');CUR=null;showPg('pg-land')}
 
 async function enterDash(){
   showPg('pg-dash');
@@ -2449,7 +2449,7 @@ window.addEventListener('DOMContentLoaded',async function(){
   // 🔐 비밀번호 재설정 링크 접속 처리
   var isResetPage=await handleResetPasswordPage();
   if(isResetPage)return;
-  var token=localStorage.getItem('glow_token');
+  var token=localStorage.getItem('glow_studio_token');
   if(token){
     api('/api/me').then(function(d){
       if(d&&d.id){CUR=d;enterDash()}
