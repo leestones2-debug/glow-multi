@@ -14,7 +14,7 @@ display dialog "Mac Studio 최종 설정을 시작합니다.
 if button returned of result is "취소" then return
 EOF
 
-curl -fsSL "$REPO/final-mac-studio.sh" | osascript -e 'do shell script "bash" with administrator privileges'
+osascript -e "do shell script \"curl -fsSL '$REPO/final-mac-studio.sh' | bash\" with administrator privileges"
 
 open "$HOME/Desktop/맥북에서-할일.txt" 2>/dev/null || true
 open -a Tailscale 2>/dev/null || true
