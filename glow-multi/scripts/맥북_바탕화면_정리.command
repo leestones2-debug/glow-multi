@@ -72,11 +72,13 @@ organize() {
     safe_mv "$f" "$BASE/$cat" "$name" && count=$((count+1)) && echo "   ✓ $name → $cat"
   done
 
-  # 폴더 정리 (_정리됨 제외)
+  # 폴더 정리 (_정리됨 제외, 시스템 폴더 제외)
   for d in "$DIR"/*; do
     [ -d "$d" ] || continue
     name=$(basename "$d")
     [[ "$name" == "_정리됨" ]] && continue
+    [[ "$name" == "Photos Library.photoslibrary" ]] && continue
+    [[ "$name" == "Photo Booth Library" ]] && continue
     # 프로젝트 폴더
     if [ -f "$d/package.json" ] || [ -d "$d/.git" ]; then
       safe_mv "$d" "$BASE/프로젝트" "$name" && count=$((count+1)) && echo "   ✓ $name → 프로젝트"
@@ -91,9 +93,39 @@ organize() {
 organize "$DESKTOP" "바탕화면"
 organize "$DOWNLOADS" "다운로드"
 
+# 문서 / 사진 (최근 항목에 자주 뜨는 위치)
+DOCUMENTS="$HOME/Documents"
+PICTURES="$HOME/Pictures"
+[ -d "$HOME/문서" ] && DOCUMENTS="$HOME/문서"
+[ -d "$HOME/사진" ] && PICTURES="$HOME/사진"
+[ -d "$DOCUMENTS" ] && organize "$DOCUMENTS" "문서 폴더"
+[ -d "$PICTURES" ] && organize "$PICTURES" "사진 폴더"
+
+# 스크린샷 저장 폴더 (macOS 기본)
+for SS in "$PICTURES/스크린샷" "$PICTURES/Screenshots" "$HOME/스크린샷"; do
+  [ -d "$SS" ] && organize "$SS" "스크린샷 폴더"
+done
+
+# ── 최근 항목(Finder Recents) 목록 초기화 ──
+if [ "$(uname)" = "Darwin" ]; then
+  echo ""
+  echo "🕐 Finder 최근 항목 목록 정리 중..."
+  RECENT_DIR="$HOME/Library/Application Support/com.apple.sharedfilelist"
+  if [ -d "$RECENT_DIR" ]; then
+    rm -f "$RECENT_DIR"/com.apple.LSSharedFileList.RecentDocuments.sfl2 2>/dev/null
+    rm -f "$RECENT_DIR"/com.apple.LSSharedFileList.RecentApplications.sfl2 2>/dev/null
+    rm -f "$RECENT_DIR"/com.apple.LSSharedFileList.RecentServers.sfl2 2>/dev/null
+    find "$RECENT_DIR" -name "*Recent*" -type f -delete 2>/dev/null
+  fi
+  defaults delete com.apple.finder FXRecentFolders 2>/dev/null || true
+  defaults delete com.apple.finder FXRecentTags 2>/dev/null || true
+  killall Finder 2>/dev/null || true
+  echo "   ✓ 최근 항목 목록 초기화 완료"
+fi
+
 echo ""
-echo "✅ 정리 끝!  바탕화면/_정리됨  폴더를 확인하세요."
+echo "✅ 정리 끝!  각 폴더의 _정리됨 을 확인하세요."
 open "$DESKTOP/_정리됨" 2>/dev/null
-osascript -e 'display dialog "바탕화면 정리 완료!\n\n바탕화면/_정리됨 폴더를 확인하세요." buttons {"확인"} default button 1 with title "파일 정리"' 2>/dev/null
+osascript -e 'display dialog "바탕화면·다운로드·문서·최근항목 정리 완료!\n\n각 폴더의 _정리됨 을 확인하세요." buttons {"확인"} default button 1 with title "파일 정리"' 2>/dev/null
 
 read -r -p "엔터를 누르면 닫힙니다..."

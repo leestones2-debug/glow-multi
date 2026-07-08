@@ -24,6 +24,37 @@ resolve_dir() {
     echo "$HOME/Downloads"
     return 0
   fi
+  if [ "$kind" = "documents" ]; then
+    for d in "$HOME/Documents" "$HOME/문서"; do
+      [ -d "$d" ] && echo "$d" && return 0
+    done
+    echo "$HOME/Documents"
+    return 0
+  fi
+  if [ "$kind" = "pictures" ]; then
+    for d in "$HOME/Pictures" "$HOME/사진"; do
+      [ -d "$d" ] && echo "$d" && return 0
+    done
+    echo "$HOME/Pictures"
+    return 0
+  fi
+}
+
+clear_mac_recents() {
+  if [ "$(uname)" != "Darwin" ]; then return 0; fi
+  echo ""
+  echo "🕐 Finder 최근 항목 목록 정리 중..."
+  local recent_dir="$HOME/Library/Application Support/com.apple.sharedfilelist"
+  if [ -d "$recent_dir" ]; then
+    rm -f "$recent_dir"/com.apple.LSSharedFileList.RecentDocuments.sfl2 2>/dev/null
+    rm -f "$recent_dir"/com.apple.LSSharedFileList.RecentApplications.sfl2 2>/dev/null
+    rm -f "$recent_dir"/com.apple.LSSharedFileList.RecentServers.sfl2 2>/dev/null
+    find "$recent_dir" -name "*Recent*" -type f -delete 2>/dev/null || true
+  fi
+  defaults delete com.apple.finder FXRecentFolders 2>/dev/null || true
+  defaults delete com.apple.finder FXRecentTags 2>/dev/null || true
+  killall Finder 2>/dev/null || true
+  echo "   ✓ 최근 항목 목록 초기화 완료"
 }
 
 ensure_base() {
@@ -151,6 +182,8 @@ organize_location() {
     base_name=$(basename "$item")
     is_skip_dir "$base_name" && continue
     is_category_dir "$base_name" && continue
+    [[ "$base_name" == "Photos Library.photoslibrary" ]] && continue
+    [[ "$base_name" == "Photo Booth Library" ]] && continue
     if [ -f "$item/package.json" ] || [ -d "$item/.git" ] || [ -f "$item/Cargo.toml" ] || [ -f "$item/go.mod" ]; then
       mkdir -p "$base/프로젝트"
       if safe_mv "$item" "$base/프로젝트"; then
@@ -194,9 +227,17 @@ TARGETS=("$@")
 if [ ${#TARGETS[@]} -eq 0 ]; then
   DESKTOP=$(resolve_dir desktop)
   DOWNLOADS=$(resolve_dir downloads)
+  DOCUMENTS=$(resolve_dir documents)
+  PICTURES=$(resolve_dir pictures)
   mkdir -p "$DESKTOP" "$DOWNLOADS"
   organize_location "$DESKTOP" "바탕화면"
   organize_location "$DOWNLOADS" "다운로드"
+  [ -d "$DOCUMENTS" ] && organize_location "$DOCUMENTS" "문서 폴더"
+  [ -d "$PICTURES" ] && organize_location "$PICTURES" "사진 폴더"
+  for ss in "$PICTURES/스크린샷" "$PICTURES/Screenshots" "$HOME/스크린샷"; do
+    [ -d "$ss" ] && organize_location "$ss" "스크린샷 폴더"
+  done
+  clear_mac_recents
 else
   for target in "${TARGETS[@]}"; do
     organize_location "$target" "$(basename "$target")"
@@ -205,7 +246,7 @@ fi
 
 echo ""
 echo "✅ 정리 완료!"
-echo "   바탕화면/_정리됨  및  다운로드/_정리됨  폴더를 확인하세요."
+echo "   바탕화면·다운로드·문서·사진 의 _정리됨 폴더와 최근 항목을 확인하세요."
 
 # macOS: Finder에서 결과 폴더 열기
 if [ "$(uname)" = "Darwin" ]; then
