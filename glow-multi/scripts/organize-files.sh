@@ -4,8 +4,8 @@
 
 set -uo pipefail
 
-CATEGORIES=(문서 이미지 동영상 음악 압축파일 프로젝트 스크립트 설치파일 기타)
-CATEGORY_NAMES="문서 이미지 동영상 음악 압축파일 프로젝트 스크립트 설치파일 기타"
+CATEGORIES=(문서 이미지 동영상 음악 압축파일 프로젝트 폴더 스크립트 설치파일 기타)
+CATEGORY_NAMES="문서 이미지 동영상 음악 압축파일 프로젝트 폴더 스크립트 설치파일 기타"
 
 # macOS 한글 경로 지원
 resolve_dir() {
@@ -89,8 +89,8 @@ classify_file() {
   lower=$(echo "$name" | tr '[:upper:]' '[:lower:]')
   ext="${lower##*.}"
 
-  # macOS 스크린샷
-  if [[ "$lower" == screen*shot* ]] || [[ "$lower" == 스크린샷* ]]; then
+  # macOS 스크린샷 / 카카오톡 사진
+  if [[ "$name" == 스크린샷* ]] || [[ "$lower" == screenshot* ]] || [[ "$lower" == kakaotalk* ]]; then
     echo "이미지"
     return
   fi
@@ -143,7 +143,7 @@ organize_location() {
     fi
   done
 
-  # 프로젝트 폴더
+  # 일반 폴더 → _정리됨/폴더 (클로드자료, 3D북 등)
   for item in "$location"/*; do
     [ -e "$item" ] || continue
     [ -d "$item" ] || continue
@@ -151,16 +151,22 @@ organize_location() {
     base_name=$(basename "$item")
     is_skip_dir "$base_name" && continue
     is_category_dir "$base_name" && continue
-    if [ -f "$item/package.json" ] || [ -d "$item/.git" ] || [ -f "$item/Cargo.toml" ] || [ -f "$item/go.mod" ] || [ -f "$item/*.xcodeproj" ] 2>/dev/null; then
+    if [ -f "$item/package.json" ] || [ -d "$item/.git" ] || [ -f "$item/Cargo.toml" ] || [ -f "$item/go.mod" ]; then
       mkdir -p "$base/프로젝트"
       if safe_mv "$item" "$base/프로젝트"; then
         echo "   → 프로젝트/ : $base_name"
         moved=$((moved + 1))
       fi
+    else
+      mkdir -p "$base/폴더"
+      if safe_mv "$item" "$base/폴더"; then
+        echo "   → 폴더/ : $base_name"
+        moved=$((moved + 1))
+      fi
     fi
   done
 
-  # 예전 분류 폴더 병합
+  # 예전 분류 폴더 병합 (이미 위에서 일반 폴더 처리됨 — 카테고리 폴더만)
   for item in "$location"/*; do
     [ -e "$item" ] || continue
     [ -d "$item" ] || continue
